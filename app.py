@@ -10,7 +10,7 @@ from readability import Document
 MAX_QUEUE_SIZE = 500000
 DEPTH_LIMIT = 3
 FILE_NAME = "clean_scraped_data.txt"
-BUFFER_SIZE = 5
+BUFFER_SIZE = 2
 INITIAL_URL = "https://pl.wikipedia.org/wiki/Wikipedia:Strona_g%C5%82%C3%B3wna"
 NUM_WORKERS_MULTIPLIER = 3
 TCP_CONNECTOR_LIMIT_PER_HOST = 20
