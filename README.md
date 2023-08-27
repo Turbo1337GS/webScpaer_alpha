@@ -1,99 +1,108 @@
-# webScpaer_alpha
-This is a web scraper written in Python that utilizes asynchronous programming with the aiohttp library to efficiently retrieve and parse web pages. It extracts the main content from HTML pages using the readability library and saves the cleaned texts to a file.
+# Web Scraper Alpha
 
-# Documentation: Web Scraper
-
-## Table of Contents
-- [Overview](#overview)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Documentation](#documentation)
-
-## Overview
-This is a web scraper written in Python that utilizes asynchronous programming with the `aiohttp` library to efficiently retrieve and parse web pages. It extracts the main content from HTML pages using the `readability` library and saves the cleaned texts to a file.
+Web Scraper Alpha is an asynchronous web scraping tool designed to crawl websites and extract cleaned text content from HTML pages. It uses asyncio and aiohttp libraries for efficient and concurrent processing of HTTP requests and HTML parsing.
 
 ## Installation
-To use this web scraper, follow the steps below:
 
-1. Install Python: This code requires Python 3.7 or higher. If you don't have Python installed, download and install it from the official Python website (https://www.python.org/).
+To use Web Scraper Alpha, follow these steps:
 
-2. Install dependencies: Open a terminal or command prompt and navigate to the project directory. Run the following command to install the required libraries:
+1. Clone the project from the GitHub repository: [https://github.com/Turbo1337GS/webScpaer_alpha](https://github.com/Turbo1337GS/webScpaer_alpha).
+2. Install the required dependencies by running the following command in your terminal:
    ```
-   pip install aiohttp beautifulsoup4 readability-lxml
-   ```
-
-3. Clone the repository: Use `git clone` to clone the repository to your local machine:
-   ```
-   git clone <repository_url>
+   pip install -r requirements.txt
    ```
 
 ## Usage
-Once you have installed the necessary dependencies and cloned the repository, follow the usage instructions below:
 
-1. Modify the code: Open the `main.py` file and update the following variables according to your requirements:
-   - `depth_limit`: The maximum depth of web pages to be visited.
-   - `file_name`: The name of the file to which the cleaned texts will be saved.
-   - `initial_url`: The initial URL from which the scraping will start.
+To use Web Scraper Alpha, follow the instructions below:
 
-2. Run the scraper: Open a terminal or command prompt, navigate to the project directory, and execute the following command:
+1. Import the necessary libraries and classes:
+   ```python
+   import asyncio
+   import aiohttp
+   from collections import deque
+   from urllib.parse import urljoin
+   import os
+   from bs4 import BeautifulSoup
+   from readability import Document
    ```
-   python main.py
+
+2. Set global configuration variables according to your needs. These variables include:
+   - `MAX_QUEUE_SIZE`: Maximum size of the crawling queue.
+   - `DEPTH_LIMIT`: Maximum depth of crawling.
+   - `FILE_NAME`: Name of the file to save the scraped data.
+   - `BUFFER_SIZE`: Number of texts to buffer before saving to file.
+   - `INITIAL_URL`: Starting URL for the web scraping process.
+   - `NUM_WORKERS_MULTIPLIER`: Number of workers to create for concurrent processing.
+   - `TCP_CONNECTOR_LIMIT_PER_HOST`: Maximum number of TCP connections per host.
+
+3. Create an instance of the `WebScraper` class:
+   ```python
+   scraper = WebScraper()
    ```
 
-3. Wait for the scraping to finish: The scraper will start visiting web pages, extracting the main content, and saving it to the file. Progress and file size will be displayed in the console.
+4. Run the web scraping process by executing the `main` method:
+   ```python
+   loop = asyncio.get_event_loop()
+   loop.run_until_complete(scraper.main())
+   ```
 
-## Documentation
+5. The scraped data will be saved in the file specified by `FILE_NAME`.
 
-### `save_to_file(content, file_name)`
+## Class: WebScraper
 
-This function saves the cleaned content to the specified file.
+The `WebScraper` class encapsulates the functionalities required for web scraping. It contains the following methods:
 
-- **Parameters:**
-  - `content` (str): The cleaned text content to be saved.
-  - `file_name` (str): The name of the file to which the content will be saved.
+### Method: \_\_init\_\_
 
-### `get_file_size(file_name)`
+The constructor method initializes the instance variables of the class:
+- `visited`: A set to store the URLs that have been visited.
+- `queue`: An asyncio Queue to store the URLs to be crawled.
+- `html_processing_queue`: An asyncio Queue to store the extracted HTML content for further processing.
+- `unique_texts`: A set to store the unique cleaned text content.
+- `buffered_texts`: A deque to buffer the cleaned text content before saving to file.
+- `semaphore`: An asyncio Semaphore to limit the number of concurrent tasks.
 
-This function returns the size of a file in bytes.
+### Method: save_to_file
 
-- **Parameters:**
-  - `file_name` (str): The name of the file.
+This method saves the buffered text content to the specified file. It writes the content to the file and clears the buffer. It also prints statistics about the scraping process, including the number of visited articles, file size, queue size, and unique texts.
 
-- **Returns:**
-  - `int`: The size of the file in bytes.
+### Method: get_file_size_in_mb
 
-### `fetch(url, session, depth)`
+This static method calculates the file size in megabytes given a file name.
 
-This is an asynchronous function that fetches a web page, extracts the main content, and updates the scraping queue.
+### Method: process_html
 
-- **Parameters:**
-  - `url` (str): The URL of the web page to be fetched.
-  - `session` (aiohttp.ClientSession): An aiohttp session object for making HTTP requests.
-  - `depth` (int): The current depth of the page in the scraping process.
+This method processes the extracted HTML content. It uses the `readability` library to extract the article content from the HTML and then uses `BeautifulSoup` for further cleaning. The cleaned text content is added to the unique texts set and buffered for saving to file.
 
-### `main()`
+### Method: html_processor
 
-This is the main function that sets up the scraping process.
+This method is a coroutine that continuously processes the HTML content extracted from the queue. It calls the `process_html` method to clean and store the text content. It marks the task as done after processing.
 
-### Additional Information
+### Method: fetch
 
-- The `visited` set keeps track of URLs that have already been visited to avoid duplicate scraping.
+This method performs the HTTP request to a given URL using an aiohttp session. It checks if the response contains HTML content and adds it to the HTML processing queue. It also extracts and enqueues all the linked URLs within the HTML. URL visits and exceptions are logged for debugging purposes.
 
-- The `queue` list holds URLs to be visited along with their respective depth.
+### Method: worker
 
-- The scraper adheres to a maximum depth limit specified by `depth_limit`.
+This method is a coroutine that continuously fetches and processes URLs from the queue. It calls the `fetch` method to perform the HTTP request and handling.
 
-- The `initial_url` variable determines the starting point for the scraping process.
+### Method: main
 
-- The `readability` library is used to extract the main content from HTML pages.
+This method is the entry point of the web scraping process. It initializes the queue with the starting URL, creates a session with a TCP connector, and spawns worker tasks to handle the crawling and processing. After the tasks are completed, it saves any remaining buffered texts to the file.
 
-- The `BeautifulSoup` library is used to parse the cleaned content and retrieve links.
+## Configuration Variables
 
-- The `unique_texts` set keeps track of unique cleaned texts to avoid duplicates in the saved file.
+The web scraping process can be customized by adjusting the following global configuration variables:
 
-- The `cleaned_text` is saved to the `file_name` if its length is greater than 30 characters.
-
-- The program outputs the number of visited articles and the file size at regular intervals.
+- `MAX_QUEUE_SIZE`: Maximum size of the crawling queue. Increase this value if you want to scrape larger websites.
+- `DEPTH_LIMIT`: Maximum depth of crawling. Increase this value to crawl deeper into a website.
+- `FILE_NAME`: Name of the file to save the scraped data. You can change this to any filename you prefer.
+- `BUFFER_SIZE`: Number of texts to buffer before saving to file. Increase this value to reduce the number of I/O operations.
+- `INITIAL_URL`: Starting URL for the web scraping process. Change this to the desired website's URL.
+- `NUM_WORKERS_MULTIPLIER`: Number of workers to create for concurrent processing. Adjust this value based on your CPU capabilities and desired crawling speed.
+- `TCP_CONNECTOR_LIMIT_PER_HOST`: Maximum number of TCP connections per host. You can tune this value to optimize network performance.
 
 ## Conclusion
-This web scraper provides an efficient way to extract and save cleaned text content from web pages. It uses asynchronous programming to speed up the scraping process and ensures that the saved file contains only unique content. Feel free to modify and adapt the code according to your own requirements.
+
+Web Scraper Alpha provides a powerful and customizable solution for scraping websites asynchronously. It leverages asyncio and aiohttp to achieve high-performance scraping and supports multi-threaded processing. By following the installation and usage instructions provided, you can easily apply Web Scraper Alpha to scrape websites and extract valuable information.
